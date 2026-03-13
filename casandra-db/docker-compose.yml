@@ -1,0 +1,32 @@
+version: "3.8" # ✅ Compose file version
+
+services:
+  cassandra: # ✅ service name
+    image: cassandra:4.1 # ✅ official Cassandra image, version 4.1
+    container_name: ecommerce-cassandra # ✅ custom container name
+    restart: always # ✅ restart container if it stops/crashes
+
+    environment: # ✅ environment variables
+      CASSANDRA_CLUSTER_NAME: "EcommerceCluster" # ✅ logical cluster name
+      CASSANDRA_DC: "DC1" # ✅ datacenter name
+      CASSANDRA_RACK: "Rack1" # ✅ rack name within the DC
+      CASSANDRA_START_RPC: "true" # ✅ enable Thrift RPC (optional, some clients need it)
+      CASSANDRA_PASSWORD_SEEDER: "admin123" # optional if using superuser password (some configs)
+
+    ports: # ✅ expose Cassandra ports to host
+      - "9042:9042" # CQL native protocol (main port to connect with clients)
+      - "9160:9160" # Thrift RPC (legacy, optional)
+
+    volumes: # ✅ data persistence
+      - cassandra_data:/var/lib/cassandra # persist data across container restarts
+      - ./cassandra-init.cql:/docker-entrypoint-initdb.d/01-init.cql # optional initial schema/data
+
+    healthcheck: # ✅ check container is ready
+      test: ["CMD-SHELL", "cqlsh -e 'DESCRIBE KEYSPACES;' localhost 9042"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  cassandra_data:
+    driver: local # ✅ named volume stored locally
